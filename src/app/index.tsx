@@ -1,98 +1,112 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// React Native imports
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+// React Imports
+import { useEffect, useState } from "react";
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
+// Component Imports
+import FooterLayoutComponent from "@/components/layout/footer.layout.component";
+import { type TabId, type TabItem } from "@/components/layout/footertypes/footer.layot.type";
+import CoreCreateTrackerComponent from "@/components/pages/createtracker/core.create.tracker.component";
+import CoreHomeComponent from "@/components/pages/home/core.home.component";
+import CoreInsightsComponent from "@/components/pages/insights/core.insights.component";
+import CoreSettingsComponent from "@/components/pages/settings/core.settings.component";
+import CoreTrackerComponent from "@/components/pages/trackers/core.tracker.component";
+import { Activity, Footprints, Home, Plus, Settings } from "lucide-react-native";
+
+// Constants
+const FooterTabs: TabItem[] = [
+    {
+        id: "home",
+        label: "Home",
+        icon: Home,
+    },
+    {
+        id: "tracker",
+        label: "Trackers",
+        icon: Footprints,
+    },
+    {
+        id: "create",
+        label: "Create",
+        icon: Plus,
+    },
+    {
+        id: "insights",
+        label: "Insights",
+        icon: Activity,
+    },
+    {
+        id: "setting",
+        label: "Settings",
+        icon: Settings,
+    },
+];
+const MAX_STEPS = 3;
+
+export default function Index() {
+	const insets = useSafeAreaInsets();
+
+	const [active, setActive] = useState<TabId>("home");
+    const [createDrawer, setCreateDrawer] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (active === "create") {
+            setCreateDrawer(true);
+        }
+    }, [active])
+
+	return (
+		<View className="bg-amber-50 flex-1 flex-col" style={{ paddingBottom: insets.bottom }}>
+			<View className="w-full h-8"></View>
+			<View className="flex-1">
+                {
+                    active === "home" ?
+                    <CoreHomeComponent
+                    /> :
+                        active === "tracker" ?
+                        <CoreTrackerComponent
+                        /> :
+                            active === "insights" ?
+                            <CoreInsightsComponent
+                            /> :
+                            active === "setting" ?
+                            <CoreSettingsComponent
+                            /> :
+                                active === "create" ?
+                                    <View>
+                                        <CoreCreateTrackerComponent
+                                            maxsteps={MAX_STEPS}
+                                            drawerModal={createDrawer}
+                                            changeModalState={(state: boolean) => {
+                                                setCreateDrawer(state);
+                                            }}
+                                            changeActive={(state: TabId) => {
+                                                setActive(state);
+                                            }}
+                                            closeModal={() => {
+                                                setActive("home");
+                                                setCreateDrawer(false);
+                                            }}
+                                        />
+                                    </View>:
+                                    null
+                }
+            </View>
+			<View className="w-full">
+				<FooterLayoutComponent
+					FooterTabs={FooterTabs}
+					activeTab={active}
+					setActive={(tabId: TabId) => {
+						setActive(tabId)
+					}}
+                    createDrawer={createDrawer}
+                    setCreateDrawer={(state: boolean) => {
+                        setCreateDrawer(state)
+                    }}
+				/>
+			</View>
+		</View>
+	);
 }
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});
